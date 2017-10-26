@@ -13,7 +13,7 @@ export default function(styleApi: IStyleAPI): Array<IStyleItem> {
     return [
         // import 'foo';
         // import './foo';
-        {match: hasNoMember, sort: moduleName(naturally)},
+        {match: hasNoMember},
 
         {separator: true},
 
