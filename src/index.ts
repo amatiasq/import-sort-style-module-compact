@@ -1,13 +1,29 @@
-import { IStyleAPI, IStyleItem } from 'import-sort-style';
+import { IMatcherFunction, INamedMemberSorterFunction, ISorterFunction, IStyleAPI, IStyleItem } from 'import-sort-style';
 
-export default function(styleApi: IStyleAPI): Array<IStyleItem> {
+import { IImport } from 'import-sort-parser';
+
+function isScopedModule(imported: IImport) {
+    return imported.moduleName[0] === '@';
+}
+
+export {
+    IMatcherFunction,
+    INamedMemberSorterFunction,
+    ISorterFunction,
+};
+
+export default function(styleApi: IStyleAPI) {
     const {
-        name,
+        and,
+        not,
+        alias,
+        dotSegmentCount,
+        unicode,
         moduleName,
+        isNodeModule,
         isAbsoluteModule,
         isRelativeModule,
         hasNoMember,
-        naturally,
     } = styleApi;
 
     return [
@@ -18,11 +34,32 @@ export default function(styleApi: IStyleAPI): Array<IStyleItem> {
         {separator: true},
 
         // import ... from 'fs';
+        {
+            match: isNodeModule,
+            sort: moduleName(unicode),
+            sortNamedMembers: alias(unicode),
+        },
+
         // import ... from 'foo';
-        {match: isAbsoluteModule, sort: moduleName(naturally), sortNamedMembers: name(naturally)},
+        {
+            match: and(isAbsoluteModule, not(isScopedModule)),
+            sort: moduleName(unicode),
+            sortNamedMembers: alias(unicode),
+        },
+
+        // import ... from "@scope/foo";
+        {
+            match: isScopedModule,
+            sort: moduleName(unicode),
+            sortNamedMembers: alias(unicode),
+        },
 
         // import ... from '../foo';
         // import ... from './foo';
-        {match: isRelativeModule, sort: moduleName(naturally), sortNamedMembers: name(naturally)},
+        {
+            match: isRelativeModule,
+            sort: [dotSegmentCount, moduleName(unicode)],
+            sortNamedMembers: alias(unicode),
+        },
     ];
 }
